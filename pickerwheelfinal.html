@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfect Circle Wheel Picker</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --gray: #ecf0f1;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.1);
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            display: flex;
+            gap: 30px;
+            transition: all 0.4s ease;
+            box-sizing: border-box;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 300px;
+            min-width: 300px;
+            border-right: 1px solid #eee;
+            padding-right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+            min-width: 0;
+            padding: 0;
+            margin: 0;
+            border: none;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        input[type="text"] {
+            padding: 12px; border: 2px solid var(--gray);
+            border-radius: 8px; outline: none; font-size: 1rem;
+        }
+        
+        .add-btn {
+            background: var(--primary); color: white; border: none;
+            padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;
+        }
+
+        .list-container {
+            flex-grow: 1;
+            overflow-y: auto; 
+            border: 1px solid var(--gray);
+            border-radius: 12px; 
+            background: #fafafa;
+        }
+
+        .student-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px; border-bottom: 1px solid #eee;
+        }
+
+        /* --- PERFECT CIRCLE WHEEL SECTION --- */
+        .wheel-box { 
+            flex: 1;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            position: relative;
+            height: 100%;
+            min-width: 0; /* Prevents flex items from overflowing */
+        }
+
+        .controls-row {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 200;
+        }
+
+        .toggle-btn {
+            background: var(--dark);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .canvas-wrapper { 
+            position: relative; 
+            /* Locks the shape to a square based on the smaller screen dimension */
+            height: 70vh;
+            width: 70vh;
+            max-width: 100%;
+            aspect-ratio: 1 / 1; 
+        }
+        
+        #wheelCanvas {
+            width: 100%; 
+            height: 100%; 
+            border-radius: 50%;
+            /* Spin timing remains 10s */
+            transition: transform 10s cubic-bezier(0.1, 0, 0.1, 1);
+            border: 10px solid #fff;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+            display: block;
+        }
+
+        .arrow {
+            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; 
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid var(--error);
+            z-index: 100;
+            filter: drop-shadow(0 4px 2px rgba(0,0,0,0.2));
+        }
+
+        #spinBtn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90px; 
+            height: 90px;
+            border-radius: 50%;
+            background: var(--dark);
+            color: white;
+            border: 5px solid white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 150;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+
+        #spinBtn:disabled { background: #95a5a6; cursor: not-allowed; }
+
+        #winnerDisplay {
+            margin-top: 30px;
+            font-size: clamp(2rem, 5vh, 4rem);
+            font-weight: 800; 
+            color: var(--dark); 
+            text-align: center;
+            min-height: 4.5rem;
+        }
+
+        .happy-winner {
+            animation: celebrate 0.5s infinite alternate;
+            color: var(--success) !important;
+        }
+        
+        @keyframes celebrate {
+            from { transform: scale(1); } to { transform: scale(1.1); }
+        }
+
+        .info { font-size: 0.9rem; color: #7f8c8d; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar" id="sidebar">
+        <h2>Student List</h2>
+        <div class="input-group">
+            <input type="text" id="nameIn" placeholder="Enter name(s)...">
+            <button class="add-btn" onclick="addName()">Add to Wheel</button>
+        </div>
+        <div class="list-container" id="uiList"></div>
+        <button onclick="clearAll()" style="background:none; border:none; color:var(--error); cursor:pointer; font-size:0.8rem; text-decoration: underline; margin-top: 10px; align-self: flex-start;">Clear All Names</button>
+    </div>
+
+    <div class="wheel-box">
+        <div class="controls-row">
+            <button class="toggle-btn" onclick="toggleSidebar()">☰ Toggle List</button>
+        </div>
+
+        <div class="canvas-wrapper">
+            <div class="arrow"></div>
+            <button id="spinBtn" onclick="spin()">SPIN</button>
+            <canvas id="wheelCanvas" width="1000" height="1000"></canvas>
+        </div>
+        
+        <h2 id="winnerDisplay">Spin to Pick!</h2>
+        <p class="info" id="poolStatus"></p>
+    </div>
+</div>
+
+<script>
+    let masterList = JSON.parse(localStorage.getItem('picker_v12')) || [];
+    let pool = []; 
+    let rotation = 0;
+    const colors = ['#3498db', '#9b59b6', '#e67e22', '#1abc9c', '#f1c40f', '#e74c3c', '#2c3e50'];
+
+    const inputField = document.getElementById('nameIn');
+    inputField.addEventListener("keydown", (e) => { if (e.key === "Enter") addName(); });
+
+    function init() {
+        resetPool();
+        render();
+    }
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('collapsed');
+        // Redraw to ensure canvas scales into new center
+        setTimeout(draw, 450);
+    }
+
+    function addName() {
+        const rawInput = inputField.value.trim();
+        if (!rawInput) return;
+
+        if (rawInput.includes(',')) {
+            rawInput.split(',').forEach(name => {
+                if (name.trim()) masterList.push({ name: name.trim(), active: true });
+            });
+        } else {
+            masterList.push({ name: rawInput, active: true });
+        }
+
+        inputField.value = '';
+        resetPool();
+        render();
+    }
+
+    function toggleActive(idx) {
+        masterList[idx].active = !masterList[idx].active;
+        resetPool();
+        render();
+    }
+
+    function remove(idx) {
+        masterList.splice(idx, 1);
+        resetPool();
+        render();
+    }
+
+    function clearAll() {
+        if(confirm("Are you sure you want to clear all names?")) {
+            masterList = [];
+            resetPool();
+            render();
+        }
+    }
+
+    function resetPool() {
+        pool = masterList.filter(s => s.active).map(s => s.name);
+    }
+
+    function render() {
+        const listUI = document.getElementById('uiList');
+        listUI.innerHTML = '';
+        masterList.forEach((s, i) => {
+            listUI.innerHTML += `
+                <div class="student-item">
+                    <span>
+                        <input type="checkbox" ${s.active ? 'checked' : ''} onchange="toggleActive(${i})">
+                        <span style="text-decoration: ${s.active ? 'none' : 'line-through'}">${s.name}</span>
+                    </span>
+                    <button style="border:none; background:none; color:red; cursor:pointer;" onclick="remove(${i})">&times;</button>
+                </div>`;
+        });
+        localStorage.setItem('picker_v12', JSON.stringify(masterList));
+        draw();
+        updateStatus();
+    }
+
+    function updateStatus() {
+        const activeCount = masterList.filter(s => s.active).length;
+        document.getElementById('poolStatus').innerText = `Unpicked: ${pool.length} | Active Total: ${activeCount}`;
+    }
+
+    function draw() {
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const activeNames = masterList.filter(s => s.active);
+        const center = canvas.width / 2;
+        
+        ctx.clearRect(0,0,canvas.width, canvas.height);
+        if(activeNames.length === 0) return;
+
+        const sliceAngle = (Math.PI * 2) / activeNames.length;
+        
+        activeNames.forEach((s, i) => {
+            const angle = i * sliceAngle;
+            ctx.fillStyle = colors[i % colors.length];
+            ctx.beginPath();
+            ctx.moveTo(center, center);
+            ctx.arc(center, center, center - 10, angle, angle + sliceAngle);
+            ctx.fill();
+            ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.stroke();
+
+            ctx.save();
+            ctx.translate(center, center);
+            ctx.rotate(angle + sliceAngle / 2);
+            
+            // Reverted back to Center Alignment for readability
+            ctx.textAlign = "right"; 
+            ctx.fillStyle = "white";
+
+            let baseSize = 48; 
+            const maxTextWidth = center - 130;
+            ctx.font = `bold ${baseSize}px Arial`;
+            
+            while (ctx.measureText(s.name).width > maxTextWidth && baseSize > 14) {
+                baseSize -= 2;
+                ctx.font = `bold ${baseSize}px Arial`;
+            }
+
+            if (activeNames.length > 15 && baseSize > 24) baseSize = 24;
+
+            ctx.font = `bold ${baseSize}px Arial`;
+            ctx.fillText(s.name, center - 80, baseSize / 3);
+            ctx.restore();
+        });
+    }
+
+    function spin() {
+        const activeNames = masterList.filter(s => s.active).map(s => s.name);
+        if(activeNames.length === 0) return;
+        if(pool.length === 0) resetPool();
+
+        const btn = document.getElementById('spinBtn');
+        const display = document.getElementById('winnerDisplay');
+        btn.disabled = true;
+        display.innerText = "Spinning...";
+        display.classList.remove('happy-winner');
+
+        const winnerIndex = Math.floor(Math.random() * pool.length);
+        const winnerName = pool[winnerIndex];
+        const visualPos = activeNames.indexOf(winnerName);
+        const degPerSlice = 360 / activeNames.length;
+        
+        const landing = 270 - (visualPos * degPerSlice) - (degPerSlice / 2);
+        rotation += (360 * 10) + (landing - (rotation % 360));
+        
+        document.getElementById('wheelCanvas').style.transform = `rotate(${rotation}deg)`;
+
+        setTimeout(() => {
+            pool.splice(winnerIndex, 1);
+            display.innerText = `🎉 ${winnerName}! 🎉`;
+            display.classList.add('happy-winner');
+            btn.disabled = false;
+            updateStatus();
+        }, 10000); 
+    }
+
+    init();
+    window.addEventListener('resize', draw);
+</script>
+
+</body>
+</html>
