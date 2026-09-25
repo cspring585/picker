@@ -26,6 +26,6 @@ Spin: Click the central SPIN button. The wheel will rotate and land on a random 
 Save Your Work: Use the Export button to download your list as a file, which can be re-uploaded later using Import.
 
 Technical Details
-Host URL: https://picker.allyit.tech/
+Host URL: https://picker.calebspring.com/
 
 Interface: Built with a focus on simplicity and ease of use in a classroom environment.
