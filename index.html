@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3498db">
     <title>Random Picker</title>
-    <link rel="manifest" href="data:application/json;base64,ewogICJkZXZhd3AwX2xvy2FsZSI6ICJLbIiSciAgIm5hbWUiOiAiUmFuZG9tIFBpY2tlciIsICJzaG9ydF9uYW1lIjogIlBpY2tlciIsICAgInN0YXJ0X3VybCI6ICIuL2luZGV4Lmh0bWwiLCAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIwTkhkyIIKFq==">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
+    <link rel="apple-touch-icon" href="./icon.svg">
 
     <style>
         :root {
@@ -136,6 +139,7 @@
         .sidebar-footer { flex-shrink: 0; padding-top: 10px; border-top: 1px solid var(--sidebar-border); }
         .backup-row { display: flex; gap: 5px; margin-bottom: 5px; }
         .backup-btn { flex: 1; font-size: 0.75rem; padding: 8px; cursor: pointer; background: var(--gray); border: 1px solid var(--sidebar-border); border-radius: 6px; color: var(--text-main); font-weight: 600; }
+        .install-btn { width: 100%; font-size: 0.8rem; padding: 9px; margin-top: 4px; cursor: pointer; background: var(--primary); border: none; border-radius: 6px; color: #ffffff; font-weight: bold; display: none; }
 
         /* --- WHEEL BOX --- */
         .wheel-box {
@@ -241,6 +245,7 @@
                 <button class="backup-btn" onclick="toggleTheme()">🌓 Theme</button>
                 <button onclick="clearAll()" style="color:var(--error); border:none; background:none; font-size:0.7rem; cursor:pointer; text-decoration:underline; flex: 1;">Clear All</button>
             </div>
+            <button id="installBtn" class="install-btn" onclick="installApp()">📲 Install Offline App</button>
         </div>
         <input type="file" id="fileInput" style="display:none" accept=".txt" onchange="importList(event)">
     </div>
@@ -279,10 +284,40 @@
     let rotation = 0;
     let winnerTimer = null;
     let sidebarTimer = null;
+    let deferredPrompt = null;
     const colors = ['#3498db', '#9b59b6', '#e67e22', '#1abc9c', '#f1c40f', '#e74c3c', '#2c3e50'];
 
     const inputField = document.getElementById('itemIn');
     inputField.addEventListener("keydown", (e) => { if (e.key === "Enter") addItem(); });
+
+    // Register Service Worker for offline support & URL bar install prompt
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(() => {});
+        });
+    }
+
+    // Listen for browser install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const installBtn = document.getElementById('installBtn');
+        if (installBtn) installBtn.style.display = 'block';
+    });
+
+    window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        const installBtn = document.getElementById('installBtn');
+        if (installBtn) installBtn.style.display = 'none';
+    });
+
+    async function installApp() {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        document.getElementById('installBtn').style.display = 'none';
+    }
 
     function init() {
         if (isDarkMode) document.body.classList.add('dark-mode');
