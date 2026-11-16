@@ -1,31 +1,66 @@
+# Random Name Picker
 
-This project is a web-based Random Name Picker designed for teachers, presenters, or anyone needing a quick, fair way to select individuals from a group. It features a clean, interactive "Spin the Wheel" interface to make selection engaging and fun.
+An interactive, web-based random name selection application designed for classrooms, meetings, workshops, and team events. Built with clean HTML5 Canvas graphics, responsive CSS styling, and vanilla JavaScript.
 
-Features
-Interactive Spin Wheel: A visual wheel that spins to pick a lucky winner.
+## Live Demo
 
-Flexible Name Entry: Add names one by one or paste a comma-separated list for bulk import.
+* Primary Demo: [picker.allyit.tech](https://picker.allyit.tech/)
+* Secondary Demo: [picker.calebspring.com](https://picker.calebspring.com/)
 
-List Management: * Toggle specific names on or off using checkboxes without deleting them.
+## Features
 
-Import/Export functionality to save your class lists for future use.
+### Interactive Spinner Wheel
+* Built on HTML5 Canvas with smooth 10 second spin animation.
+* High resolution graphics with adaptive text scaling for long names.
+* Precise angular stopping alignment ensuring fair visual pointer selection.
 
-Clear All button for a fresh start.
+### Non-Repeating Selection Pool
+* Tracks picked names dynamically during a session.
+* Removes selected winners from the active pool until all active names have been picked.
+* Resets the pool automatically once every active entry has won.
 
-Tracking: Real-time counters showing the number of "Unpicked" vs. "Active Total" names.
+### Winner Celebration
+* Visual winner overlay modal appearing immediately when the wheel stops.
+* Auto-dismisses after 15 seconds or upon manual overlay click.
 
-Responsive Design: A clean, centered UI that works well on different screen sizes.
+### Roster Management Sidebar
+* Collapsible sidebar panel accessible via the Toggle List button.
+* Automatic sidebar hiding after 30 seconds of user inactivity.
+* Add single names or paste comma-separated lists for quick bulk entry.
+* Checkbox controls to temporarily enable or disable specific names without deleting them.
+* Individual entry removal and single-click Clear All list option.
+* Live status counters tracking Unpicked count versus Active Total.
 
-How to Use
-Input Names: Open the sidebar by clicking Toggle List. Enter names into the text field and click Add to Wheel.
+### Data Persistence and File Portability
+* Saves entry lists automatically to browser localStorage across sessions.
+* Export rosters to plain text (.txt) files.
+* Import saved roster text files directly into the application.
 
-Manage the List: Use the checkboxes to decide which names are currently eligible for the drawing.
+### Customization and Responsive UI
+* Dark mode and Light mode toggle with automatic preference saving.
+* Fluid responsive layout optimized for desktop displays, projectors, and mobile screens.
 
-Spin: Click the central SPIN button. The wheel will rotate and land on a random name from your active list.
+## Interface Guide
 
-Save Your Work: Use the Export button to download your list as a file, which can be re-uploaded later using Import.
+1. Open Roster Sidebar: Click the Toggle List button in the top navigation bar.
+2. Add Names: Type a single name or paste a list separated by commas into the input box, then click Add to Wheel.
+3. Manage Entries: Uncheck names to temporarily skip them, or click the remove button next to any name to delete it.
+4. Spin the Wheel: Click the central SPIN button to launch the selection animation.
+5. Save or Load Rosters: Use Export List to download a text file copy, or Import List to reload existing files.
+6. Toggle Theme: Click the theme toggle icon in the top header to switch between light and dark visual themes.
 
-Technical Details
-Host URL: https://picker.calebspring.com/
+## Technical Details
 
-Interface: Built with a focus on simplicity and ease of use in a classroom environment.
+* Frontend: Vanilla HTML5, CSS3, JavaScript (ES6+).
+* Graphics: HTML5 Canvas Context 2D.
+* Storage: Browser LocalStorage API.
+* Dependencies: Zero external runtime libraries or framework dependencies.
+
+## File Structure
+
+* `index.html`: Contains the full application markup, styles, canvas rendering logic, state management, and event handling.
+* `README.md`: Project documentation and user instructions.
+
+## Usage
+
+No build step or server setup is required. Open `index.html` directly in any modern web browser or serve the file using any static web server.
