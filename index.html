@@ -370,8 +370,14 @@
         active: entry.active !== undefined ? entry.active : true
     }));
 
-    // Active session memory of chosen item IDs (persists across list additions/removals)
-    let pickedIds = new Set();
+    // Persistent memory of chosen item IDs across page reloads, tab closes, and app restarts
+    const validIds = new Set(masterList.map(entry => entry.id));
+    let savedPickedIds = JSON.parse(localStorage.getItem('picker_picked_ids_v15')) || [];
+    let pickedIds = new Set(savedPickedIds.filter(id => validIds.has(id)));
+
+    function savePickedIds() {
+        localStorage.setItem('picker_picked_ids_v15', JSON.stringify(Array.from(pickedIds)));
+    }
 
     let isDarkMode = localStorage.getItem('picker_theme') === 'dark';
     let rotation = 0;
@@ -546,6 +552,7 @@
                 </div>`;
         });
         localStorage.setItem('picker_final_v15', JSON.stringify(masterList));
+        savePickedIds();
         draw();
 
         const activeTotal = masterList.filter(entry => entry.active).length;
@@ -604,6 +611,7 @@
         let unpickedPool = getUnpickedActiveItems();
         if (unpickedPool.length === 0) {
             pickedIds.clear();
+            savePickedIds();
             unpickedPool = getUnpickedActiveItems();
         }
 
